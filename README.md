@@ -1,8 +1,9 @@
-# SPINEWISE
+# SPINEWISE 🦴
 
 **An Interactive 3D Scoliosis Awareness & Learning Application**
 
-SPINEWISE is an educational, real-time 3D graphics application designed to help users understand the structure of the human spine and how scoliosis affects it. Built from scratch using **C++17 and OpenGL 3.3**, this application generates a procedural 3D spine and deforms it in real-time based on user-entered scoliosis parameters (such as curve region, direction, pattern, and Cobb angle).
+SPINEWISE is an interactive 3D educational application designed to help users understand the structure of the human spine and how scoliosis changes it in three dimensions. By entering parameters from a standard examination report (curve region, direction, pattern, and Cobb angle), users can visualize a procedurally generated 3D spine bending to represent that curve, side-by-side with a normal reference spine.
+
 
 > **Disclaimer:** SPINEWISE is an educational visualization tool. It does not diagnose scoliosis, interpret X-ray images, or prescribe exercises.
 
@@ -37,28 +38,97 @@ To build and run this project locally, you will need:
 
 ### Build Instructions
 
-1. **Clone the repository:**
-   Make sure Git LFS is installed before cloning to ensure 3D models are downloaded correctly.
+#### Windows
+
+1. Clone the repository:
+
    ```bash
-   git lfs install
-   git clone <repository-url>
-   cd spinewise
+   git clone https://github.com/dindawijayanto/spinewise.git
+   cd SPINEWISE
    ```
 
-2. **Generate the build files using CMake:**
+2. Generate the build files using CMake:
+
    ```bash
-   mkdir build
-   cd build
-   cmake ..
+   cmake -B build
    ```
 
-3. **Compile the project:**
+3. Compile the project:
+
    ```bash
-   cmake --build .
+   cmake --build build --config Release
    ```
 
-4. **Run the application:**
-   The executable will be generated inside the `build/` directory (or `build/Debug`/`build/Release` on Windows). Ensure you run the application from the root directory so the executable can correctly locate the `assets/` and `shaders/` folders.
+4. Run the executable located in the `build/Release` (or `build`) directory.
+
+#### macOS
+
+1. Install Xcode Command Line Tools if you haven't already:
+
+   ```bash
+   xcode-select --install
+   ```
+
+2. Clone and navigate to the repository:
+
+   ```bash
+   git clone https://github.com/dindawijayanto/spinewise.git
+   cd SPINEWISE
+   ```
+
+3. Generate build files and compile:
+
+   ```bash
+   cmake -B build
+   cmake --build build
+   ```
+
+4. Run the executable:
+
+   ```bash
+   ./build/SPINEWISE
+   ```
+
+#### Linux
+
+1. Install essential build tools and OpenGL dependencies based on your distribution:
+
+   **Ubuntu/Debian (`apt`):**
+   ```bash
+   sudo apt update
+   sudo apt install build-essential cmake libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+   ```
+
+   **Fedora (`dnf`):**
+   ```bash
+   sudo dnf groupinstall "Development Tools"
+   sudo dnf install cmake libX11-devel libXrandr-devel libXi-devel mesa-libGL-devel mesa-libGLU-devel libXcursor-devel libXinerama-devel wayland-devel libxkbcommon-devel
+   ```
+
+   **Arch Linux (`pacman`):**
+   ```bash
+   sudo pacman -S base-devel cmake libx11 libxrandr libxi libglvnd glu libxcursor libxinerama wayland libxkbcommon
+   ```
+
+2. Clone and navigate to the repository:
+
+   ```bash
+   git clone https://github.com/dindawijayanto/spinewise.git
+   cd SPINEWISE
+   ```
+
+3. Generate build files and compile:
+
+   ```bash
+   cmake -B build
+   cmake --build build
+   ```
+
+4. Run the executable:
+
+   ```bash
+   ./build/SPINEWISE
+   ```
 
 ## 📂 Repository Structure
 
