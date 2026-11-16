@@ -33,6 +33,10 @@ target_include_directories(glad PUBLIC external/glad/include)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE external/glm)
 
+# tinyobjloader (header-only)
+add_library(tinyobjloader INTERFACE)
+target_include_directories(tinyobjloader INTERFACE external/tinyobjloader)
+
 # Dear ImGui + backend GLFW/OpenGL3
 add_library(imgui STATIC
     external/imgui/imgui.cpp
@@ -56,7 +60,7 @@ file(GLOB_RECURSE SPINEWISE_SOURCES CONFIGURE_DEPENDS
 
 add_executable(Spinewise ${SPINEWISE_SOURCES})
 target_include_directories(Spinewise PRIVATE src)
-target_link_libraries(Spinewise PRIVATE glfw glad glm imgui)
+target_link_libraries(Spinewise PRIVATE glfw glad glm imgui tinyobjloader)
 target_compile_definitions(Spinewise PRIVATE GLFW_INCLUDE_NONE)
 
 if(MSVC)
