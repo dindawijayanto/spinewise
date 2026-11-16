@@ -37,7 +37,7 @@ SkeletonExplorerScreen::SkeletonExplorerScreen(App& app)
     : Screen(app)
 {
 }
-
+SkeletonExplorerScreen::~SkeletonExplorerScreen() = default;
 void SkeletonExplorerScreen::onEnter()
 {
     m_window = m_app.window();
