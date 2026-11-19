@@ -149,4 +149,6 @@ spinewise/
 ## 📜 Credits & Acknowledgments
 
 *   **Developed by:** Team "Ayo Bikin Roblok" as the Final Project for Computer Graphics.
-*   **3D Assets:** Skeleton and vertebra models adapted from [Z-Anatomy / BodyParts3D] (licensed under CC BY-SA 4.0 or relevant license).
+*   **3D Assets:** Skeleton and vertebra models (C1–L5) adapted from [BodyParts3D / Anatomography (v4.3)](https://lifesciencedb.jp/bp3d/) © Database Center for Life Science (DBCLS), licensed under [CC BY-SA 2.1 Japan](https://creativecommons.org/licenses/by-sa/2.1/jp/).
+*   **Dataset & Extraction Tool:** [BodyParts3D 4.3 Verified Mesh Set](https://doi.org/10.5281/zenodo.22727173) by Oliver Case (2026), licensed under the MIT License (code) and CC BY-SA 2.1 Japan (meshes).
+*   **Third-Party Libraries:** [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader) by Syoyo Fujita (MIT License), GLFW, GLAD, GLM, and Dear ImGui.
