@@ -2,6 +2,7 @@
 
 #include "core/App.h"
 #include "ui/CommonUI.h"
+#include "ui/SpineParamsPanel.h"
 
 #include <glad/gl.h>
 #include <imgui.h>
@@ -125,6 +126,11 @@ void SpineLabScreen::render()
 void SpineLabScreen::drawUI()
 {
     ui::drawTopBar(m_app, name());
+
+    if (ui::drawSpineParamsPanel(m_params)) {
+        // TODO (Diny): panggil applyCDeformation / applySDeformation(m_params) di sini
+    }
+
 	ImGui::Begin("Camera Controls");
 	if (ImGui::Button("Front View (Coronal)")) {
 		m_camera.applyPreset(CameraPreset::Front);

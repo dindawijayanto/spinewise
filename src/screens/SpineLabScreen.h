@@ -24,6 +24,8 @@ private:
     void initCubeMesh(); // Helper untuk membuat mesh 1 kubus
     // Spine (Diny)
     Spinewise::SpineDeformer m_spineDeformer;
+    // Input parameter dari panel (Dinda)
+    Spinewise::SpineParams m_params;
     // Render & Kamera (Dealova)
     std::unique_ptr<Shader> m_shader;
     OrbitCamera m_camera;
