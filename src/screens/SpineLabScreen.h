@@ -3,7 +3,8 @@
 #include "core/Screen.h"
 #include "spine/SpineDeformer.h"
 #include "render/Shader.h"   
-#include "camera/Camera.h"   
+#include "camera/Camera.h"
+#include "camera/CameraInput.h"
 #include <memory>
 
 // Owner: Diny (Spine) + Dealova (Camera/Render)
@@ -26,6 +27,7 @@ private:
     // Render & Kamera (Dealova)
     std::unique_ptr<Shader> m_shader;
     OrbitCamera m_camera;
+    OrbitCameraInput m_cameraInput;
     // Buffer OpenGL untuk kubus
     unsigned int m_cubeVAO = 0;
     unsigned int m_cubeVBO = 0;

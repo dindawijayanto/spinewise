@@ -48,6 +48,13 @@ void OrbitCamera::rotate(float deltaX, float deltaY)
     clampState();
 }
 
+void OrbitCamera::orbitBy(float yawRadians, float pitchRadians)
+{
+    m_yaw += yawRadians;
+    m_pitch += pitchRadians;
+    clampState();
+}
+
 void OrbitCamera::pan(float deltaX, float deltaY)
 {
     const float panScale = m_distance * kPanSpeed;

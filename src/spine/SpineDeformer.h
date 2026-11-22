@@ -9,10 +9,18 @@
 
 namespace Spinewise {
 
+    // Region anatomi tiap vertebra. Beda dengan Spinewise::Region (di SpineParams.h)
+    // yang merupakan region *kurva* skoliosis dan tidak punya Cervical.
+    enum class VertebraRegion {
+        Cervical,
+        Thoracic,
+        Lumbar
+    };
+
     struct Vertebra {
         int id;
         std::string name;
-        Region region;
+        VertebraRegion region;
 
         glm::vec3 basePosition;
         glm::vec3 currentPosition;

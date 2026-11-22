@@ -7,6 +7,8 @@
 #include <imgui.h>
 #include <iostream>
 
+#include "core/AssetPath.h"
+
 void SpineLabScreen::initCubeMesh()
 {
     // Data 36 vertex untuk posisi unit kubus
@@ -52,14 +54,18 @@ void SpineLabScreen::onEnter()
     initCubeMesh();
 
     try {
-        m_shader = std::make_unique<Shader>("shaders/basic.vert", "shaders/basic.frag");
+        // resolveAssetPath: jalan baik dari folder build/ maupun root repo
+        m_shader = std::make_unique<Shader>(resolveAssetPath("shaders/basic.vert"),
+                                            resolveAssetPath("shaders/basic.frag"));
     }
     catch (const std::exception& e) {
+        m_shader.reset();
         std::cerr << "Failed to load shaders: " << e.what() << std::endl;
     }
 
     m_camera.reset();
-    m_camera.zoom(-15.0f); 
+    m_camera.zoom(-15.0f);
+    m_cameraInput.reset();
 }
 
 void SpineLabScreen::onExit()
@@ -72,6 +78,14 @@ void SpineLabScreen::onExit()
 
 void SpineLabScreen::update(float /*dt*/)
 {
+    // Update aspect ratio tiap frame supaya spine tidak gepeng saat window di-resize
+    const int width = m_app.framebufferWidth();
+    const int height = m_app.framebufferHeight();
+    if (height > 0) {
+        m_camera.setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+    }
+
+    m_cameraInput.update(m_app.window(), m_camera);
 }
 
 void SpineLabScreen::render()
@@ -92,7 +106,6 @@ void SpineLabScreen::render()
 
     for (const auto& v : vertebrae) {
         m_shader->setMat4("uModel", v.getModelMatrix());
-        float factor = (v.id % 2 == 0) ? 1.0f : 0.82f;
         if (v.id <= 4) {
             glVertexAttrib3f(1, 0.2f, 0.8f, 0.9f);  // Lumbar: Cyan
         }
@@ -123,7 +136,8 @@ void SpineLabScreen::drawUI()
 	ImGui::SameLine();
 	if (ImGui::Button("3D View / Angled View")) {
         m_camera.reset();
-		m_camera.rotate(1.1f, 0.35f);
+		// rotate() menerima pixel mouse; untuk sudut tetap pakai orbitBy() (radian)
+		m_camera.orbitBy(1.1f, 0.35f);
 		m_camera.zoom(-15.0f);
 	}
 	ImGui::End();
