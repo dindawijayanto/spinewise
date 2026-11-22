@@ -18,7 +18,10 @@ public:
     void setAspectRatio(float aspect);
     void setPerspective(float fovDegrees, float nearPlane, float farPlane);
 
+    // deltaX/deltaY dalam pixel mouse (dikali sensitivitas).
     void rotate(float deltaX, float deltaY);
+    // Putar kamera langsung dalam radian (untuk preset/tombol, bukan input mouse).
+    void orbitBy(float yawRadians, float pitchRadians);
     void pan(float deltaX, float deltaY);
     void zoom(float delta);
 
@@ -43,7 +46,7 @@ private:
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
 
-    float m_fovRadians = 45.0f;
+    float m_fovRadians = 0.785398163f; // 45 derajat
     float m_aspect = 16.0f / 9.0f;
     float m_near = 0.1f;
     float m_far = 100.0f;

@@ -25,9 +25,9 @@ namespace Spinewise {
             v.id = i;
             v.name = names[i];
 
-            if (i <= 4) v.region = Region::Lumbar;
-            else if (i <= 16) v.region = Region::Thoracic;
-            else v.region = Region::Thoracic;
+            if (i <= 4) v.region = VertebraRegion::Lumbar;          // L5-L1
+            else if (i <= 16) v.region = VertebraRegion::Thoracic;  // T12-T1
+            else v.region = VertebraRegion::Cervical;               // C7-C1
 
             float y = startY + (i * vertebraSpacing);
             float x = 0.0f;

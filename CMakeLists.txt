@@ -5,9 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Default Release untuk generator single-config (Ninja, MinGW/Unix Makefiles).
+# Generator ini MENGABAIKAN `cmake --build build --config Release`, jadi build type
+# harus ditentukan saat configure. Untuk debugging: cmake -B build -DCMAKE_BUILD_TYPE=Debug
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
+message(STATUS "Spinewise build type: ${CMAKE_BUILD_TYPE}${CMAKE_CONFIGURATION_TYPES}")
 
 # Runtime statis supaya .exe jalan di laptop lain tanpa install apa pun
 if(MSVC)

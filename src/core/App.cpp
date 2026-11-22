@@ -113,6 +113,8 @@ int App::run()
         if (m_fbWidth == 0 || m_fbHeight == 0)
         {
             glfwWaitEvents();
+            // Reset waktu supaya dt frame berikutnya tidak berisi seluruh durasi minimize
+            lastTime = glfwGetTime();
             continue;
         }
 
