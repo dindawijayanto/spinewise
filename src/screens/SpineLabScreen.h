@@ -1,6 +1,10 @@
 #pragma once
 
 #include "core/Screen.h"
+#include "spine/SpineDeformer.h"
+#include "render/Shader.h"   
+#include "camera/Camera.h"   
+#include <memory>
 
 // Owner: Diny (Spine) + Dealova (Camera/Render)
 // Panel input SpineParams, spine prosedural, deformasi C/S, mode comparison.
@@ -15,4 +19,16 @@ public:
     void update(float dt) override;
     void render() override;
     void drawUI() override;
+private:
+    void initCubeMesh(); // Helper untuk membuat mesh 1 kubus
+    // Spine (Diny)
+    Spinewise::SpineDeformer m_spineDeformer;
+    // Input parameter dari panel (Dinda)
+    Spinewise::SpineParams m_params;
+    // Render & Kamera (Dealova)
+    std::unique_ptr<Shader> m_shader;
+    OrbitCamera m_camera;
+    // Buffer OpenGL untuk kubus
+    unsigned int m_cubeVAO = 0;
+    unsigned int m_cubeVBO = 0;
 };
