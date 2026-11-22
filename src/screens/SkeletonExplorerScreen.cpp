@@ -1,6 +1,7 @@
 #include "screens/SkeletonExplorerScreen.h"
 
 #include "core/App.h"
+#include "core/AssetPath.h"
 #include "render/Shader.h"
 #include "ui/CommonUI.h"
 
@@ -9,29 +10,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <imgui.h>
 
-#include <filesystem>
-#include <stdexcept>
-
-namespace
-{
-std::string resolveShaderPath(const char* relativePath)
-{
-    namespace fs = std::filesystem;
-    const fs::path direct(relativePath);
-    if (fs::exists(direct))
-    {
-        return direct.string();
-    }
-
-    const fs::path fromBuildDir = fs::path("..").append(relativePath);
-    if (fs::exists(fromBuildDir))
-    {
-        return fromBuildDir.string();
-    }
-
-    throw std::runtime_error(std::string("Shader file tidak ditemukan: ") + relativePath);
-}
-} // namespace
+#include <cstdio>
+#include <exception>
 
 SkeletonExplorerScreen::SkeletonExplorerScreen(App& app)
     : Screen(app)
@@ -40,31 +20,36 @@ SkeletonExplorerScreen::SkeletonExplorerScreen(App& app)
 SkeletonExplorerScreen::~SkeletonExplorerScreen() = default;
 void SkeletonExplorerScreen::onEnter()
 {
-    m_window = m_app.window();
     createCubeBuffers();
 
-    const std::string vertexPath = resolveShaderPath("shaders/basic.vert");
-    const std::string fragmentPath = resolveShaderPath("shaders/basic.frag");
-    m_shader = std::make_unique<Shader>(vertexPath, fragmentPath);
+    // Shader hilang/gagal compile jangan sampai membuat aplikasi crash:
+    // tangkap error, tampilkan di UI, dan render() otomatis skip karena m_shader null.
+    m_loadError.clear();
+    try
+    {
+        m_shader = std::make_unique<Shader>(resolveAssetPath("shaders/basic.vert"),
+                                            resolveAssetPath("shaders/basic.frag"));
+    }
+    catch (const std::exception& e)
+    {
+        m_shader.reset();
+        m_loadError = e.what();
+        std::fprintf(stderr, "[SkeletonExplorer] %s\n", e.what());
+    }
 
     m_camera.reset();
     m_camera.setPerspective(45.0f, 0.1f, 100.0f);
+    m_cameraInput.reset();
 }
 
 void SkeletonExplorerScreen::onExit()
 {
     m_shader.reset();
     destroyCubeBuffers();
-    m_window = nullptr;
 }
 
 void SkeletonExplorerScreen::update(float /*dt*/)
 {
-    if (!m_window)
-    {
-        return;
-    }
-
     const int width = m_app.framebufferWidth();
     const int height = m_app.framebufferHeight();
     if (height > 0)
@@ -72,7 +57,7 @@ void SkeletonExplorerScreen::update(float /*dt*/)
         m_camera.setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     }
 
-    handleCameraInput();
+    m_cameraInput.update(m_app.window(), m_camera);
 }
 
 void SkeletonExplorerScreen::render()
@@ -130,6 +115,13 @@ void SkeletonExplorerScreen::drawUI()
             m_camera.reset();
 
         ImGui::TextDisabled("Distance: %.2f", m_camera.distance());
+
+        if (!m_loadError.empty())
+        {
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Gagal memuat shader:");
+            ImGui::TextWrapped("%s", m_loadError.c_str());
+        }
     }
     ImGui::End();
 }
@@ -204,72 +196,4 @@ void SkeletonExplorerScreen::destroyCubeBuffers()
         glDeleteVertexArrays(1, &m_cubeVao);
         m_cubeVao = 0;
     }
-}
-
-void SkeletonExplorerScreen::handleCameraInput()
-{
-    if (!m_window)
-    {
-        return;
-    }
-
-    ImGuiIO& io = ImGui::GetIO();
-
-    double mouseX = 0.0;
-    double mouseY = 0.0;
-    glfwGetCursorPos(m_window, &mouseX, &mouseY);
-
-    const float deltaX = static_cast<float>(mouseX - m_prevMouseX);
-    const float deltaY = static_cast<float>(mouseY - m_prevMouseY);
-
-    const bool leftMouseDown = glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-    const bool rightMouseDown = glfwGetMouseButton(m_window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
-
-    if (!io.WantCaptureMouse)
-    {
-        if (leftMouseDown)
-        {
-            if (m_prevLeftMouseDown)
-            {
-                m_camera.rotate(deltaX, deltaY);
-            }
-            else
-            {
-                m_prevLeftMouseDown = true;
-            }
-        }
-        else
-        {
-            m_prevLeftMouseDown = false;
-        }
-
-        if (rightMouseDown)
-        {
-            if (m_prevRightMouseDown)
-            {
-                m_camera.pan(deltaX, deltaY);
-            }
-            else
-            {
-                m_prevRightMouseDown = true;
-            }
-        }
-        else
-        {
-            m_prevRightMouseDown = false;
-        }
-
-        if (io.MouseWheel != 0.0f)
-        {
-            m_camera.zoom(io.MouseWheel);
-        }
-    }
-    else
-    {
-        m_prevLeftMouseDown = false;
-        m_prevRightMouseDown = false;
-    }
-
-    m_prevMouseX = mouseX;
-    m_prevMouseY = mouseY;
 }

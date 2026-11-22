@@ -44,14 +44,16 @@ To build and run this project locally, you will need:
 
    ```bash
    git clone https://github.com/dindawijayanto/spinewise.git
-   cd SPINEWISE
+   cd spinewise
    ```
 
 2. Generate the build files using CMake:
 
    ```bash
-   cmake -B build
+   cmake -B build -DCMAKE_BUILD_TYPE=Release
    ```
+
+   > Generator single-config (Ninja / MinGW Makefiles) mengabaikan `--config`, jadi build type wajib ditentukan di langkah ini. Untuk debugging, ganti dengan `-DCMAKE_BUILD_TYPE=Debug`. Kalau folder `build/` lama masih Debug, jalankan ulang perintah di atas.
 
 3. Compile the project:
 
@@ -59,7 +61,7 @@ To build and run this project locally, you will need:
    cmake --build build --config Release
    ```
 
-4. Run the executable located in the `build/Release` (or `build`) directory.
+4. Run the executable located in the `build/Release` (Visual Studio) or `build` (Ninja/MinGW) directory.
 
 #### macOS
 
@@ -73,20 +75,20 @@ To build and run this project locally, you will need:
 
    ```bash
    git clone https://github.com/dindawijayanto/spinewise.git
-   cd SPINEWISE
+   cd spinewise
    ```
 
 3. Generate build files and compile:
 
    ```bash
-   cmake -B build
+   cmake -B build -DCMAKE_BUILD_TYPE=Release
    cmake --build build
    ```
 
 4. Run the executable:
 
    ```bash
-   ./build/SPINEWISE
+   ./build/Spinewise
    ```
 
 #### Linux
@@ -114,20 +116,20 @@ To build and run this project locally, you will need:
 
    ```bash
    git clone https://github.com/dindawijayanto/spinewise.git
-   cd SPINEWISE
+   cd spinewise
    ```
 
 3. Generate build files and compile:
 
    ```bash
-   cmake -B build
+   cmake -B build -DCMAKE_BUILD_TYPE=Release
    cmake --build build
    ```
 
 4. Run the executable:
 
    ```bash
-   ./build/SPINEWISE
+   ./build/Spinewise
    ```
 
 ## 📂 Repository Structure

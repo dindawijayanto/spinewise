@@ -3,10 +3,10 @@
 #include "core/Screen.h"
 
 #include "camera/Camera.h"
-
-#include <GLFW/glfw3.h>
+#include "camera/CameraInput.h"
 
 #include <memory>
+#include <string>
 
 class Shader;
 
@@ -34,18 +34,12 @@ public:
 private:
     void createCubeBuffers();
     void destroyCubeBuffers();
-    void handleCameraInput();
 
     unsigned int m_cubeVao = 0;
     unsigned int m_cubeVbo = 0;
 
     std::unique_ptr<Shader> m_shader;
+    std::string m_loadError; // ditampilkan di UI kalau shader gagal dimuat
     OrbitCamera m_camera;
-
-    bool m_prevLeftMouseDown = false;
-    bool m_prevRightMouseDown = false;
-    double m_prevMouseX = 0.0;
-    double m_prevMouseY = 0.0;
-
-    GLFWwindow* m_window = nullptr;
+    OrbitCameraInput m_cameraInput;
 };
