@@ -159,6 +159,11 @@ void App::quit()
         glfwSetWindowShouldClose(m_window, GLFW_TRUE);
 }
 
+ImGuiContext* App::imguiContext() const
+{
+    return ImGui::GetCurrentContext();
+}
+
 void App::applyPendingScreen()
 {
     if (!m_hasPending)
