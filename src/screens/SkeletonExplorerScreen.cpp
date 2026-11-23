@@ -19,8 +19,7 @@
 
 namespace
 {
-    constexpr float kSidePanelRatio = 0.34f; // 34% kiri untuk panel UI, 66% kanan untuk viewport 3D
-
+    constexpr float kSidePanelRatio = 0.34f; 
     struct SkeletonVertex
     {
         glm::vec3 pos;
@@ -49,13 +48,12 @@ namespace
         camera.reset();
         input.reset();
 
-        // Hadapkan belakang (tampak punggung/spine) dan perbesar sedikit agar lebih jelas
         glm::mat4 model(1.0f);
         model = glm::scale(model, glm::vec3(1.15f));
         model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         modelMatrix = model;
     }
-} // namespace
+} 
 
 SkeletonExplorerScreen::SkeletonExplorerScreen(App& app)
     : Screen(app)
@@ -119,7 +117,7 @@ void SkeletonExplorerScreen::onExit()
 
 void SkeletonExplorerScreen::update(float dt)
 {
-    (void)dt;
+    m_camera.update(dt);
 
     GLFWwindow* win = m_app.window();
     if (!win)
@@ -299,6 +297,31 @@ void SkeletonExplorerScreen::drawUI()
     ImGui::BulletText("Drag Kiri: Putar model");
     ImGui::BulletText("Drag Kanan: Geser (Pan)");
     ImGui::BulletText("Scroll: Zoom in / out");
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    ImGui::Text("Tampilan:");
+    ImGui::Spacing();
+
+    // Three equal-width preset buttons on one row
+    const float presetBtnW = (ImGui::GetContentRegionAvail().x
+        - ImGui::GetStyle().ItemSpacing.x * 2.0f) / 3.0f;
+    if (ImGui::Button("Depan", ImVec2(presetBtnW, 28.0f)))
+    {
+        m_camera.requestPreset(CameraPreset::Front);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Samping", ImVec2(presetBtnW, 28.0f)))
+    {
+        m_camera.requestPreset(CameraPreset::Side);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Atas", ImVec2(presetBtnW, 28.0f)))
+    {
+        m_camera.requestPreset(CameraPreset::Top);
+    }
 
     ImGui::Spacing();
     ImGui::Separator();
