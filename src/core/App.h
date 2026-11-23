@@ -7,6 +7,7 @@
 #include <memory>
 
 struct GLFWwindow;
+struct ImGuiContext;
 
 class App
 {
@@ -17,15 +18,13 @@ public:
     App(const App&) = delete;
     App& operator=(const App&) = delete;
 
-    // Jalankan aplikasi. Return 0 kalau sukses (dipakai sebagai exit code).
     int run();
 
-    // Pindah screen. Perpindahan dilakukan di awal frame berikutnya
-    // supaya aman dipanggil dari dalam update()/drawUI().
     void switchTo(ScreenId id);
     void quit();
 
     GLFWwindow* window() const { return m_window; }
+    ImGuiContext* imguiContext() const;
     int framebufferWidth() const { return m_fbWidth; }
     int framebufferHeight() const { return m_fbHeight; }
 
