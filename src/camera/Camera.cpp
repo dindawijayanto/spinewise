@@ -6,18 +6,40 @@
 #include <glm/trigonometric.hpp>
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
 constexpr float kPi = 3.14159265358979323846f;
-constexpr float kYawFront = -kPi / 2.0f;
-constexpr float kYawSide = 0.0f;
+
+// Preset target orientations
+constexpr float kYawFront = -kPi / 2.0f; 
+constexpr float kYawSide  =  0.0f;
+
 constexpr float kPitchFrontSide = 0.0f;
-constexpr float kPitchTop = kPi / 2.0f - 0.0872664626f; // 85 derajat
+constexpr float kPitchTop = kPi / 2.0f - 0.0872664626f;
 
 constexpr float kRotateSpeed = 0.005f;
-constexpr float kPanSpeed = 0.0015f;
-constexpr float kZoomSpeed = 0.5f;
+constexpr float kPanSpeed    = 0.0015f;
+constexpr float kZoomSpeed   = 0.5f;
+
+constexpr float kTransitionDuration = 0.6f;
+
+float smoothStep(float t)
+{
+    t = std::clamp(t, 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+float shortestAngleDelta(float from, float to)
+{
+    float delta = std::fmod(to - from, 2.0f * kPi);
+    if (delta > kPi)
+        delta -= 2.0f * kPi;
+    else if (delta < -kPi)
+        delta += 2.0f * kPi;
+    return delta;
+}
 } 
 
 OrbitCamera::OrbitCamera()
@@ -41,58 +63,110 @@ void OrbitCamera::setPerspective(float fovDegrees, float nearPlane, float farPla
     m_far = farPlane;
 }
 
+void OrbitCamera::update(float dt)
+{
+    if (!m_transitioning)
+    {
+        return;
+    }
+
+    m_transitionTime += dt;
+
+    if (m_transitionTime >= m_transitionDuration)
+    {
+        m_yaw      = m_toYaw;
+        m_pitch    = m_toPitch;
+        m_distance = m_toDistance;
+        m_transitioning = false;
+        clampState();
+        return;
+    }
+
+    const float rawT   = m_transitionTime / m_transitionDuration;
+    const float easedT = smoothStep(rawT);
+
+    m_yaw      = m_fromYaw + shortestAngleDelta(m_fromYaw, m_toYaw) * easedT;
+    m_pitch    = m_fromPitch    + (m_toPitch    - m_fromPitch)    * easedT;
+    m_distance = m_fromDistance + (m_toDistance - m_fromDistance) * easedT;
+
+    clampState();
+}
+
 void OrbitCamera::rotate(float deltaX, float deltaY)
 {
-    m_yaw += deltaX * kRotateSpeed;
+    cancelTransition();
+    m_yaw   += deltaX * kRotateSpeed;
     m_pitch += -deltaY * kRotateSpeed;
     clampState();
 }
 
 void OrbitCamera::orbitBy(float yawRadians, float pitchRadians)
 {
-    m_yaw += yawRadians;
+    cancelTransition();
+    m_yaw   += yawRadians;
     m_pitch += pitchRadians;
     clampState();
 }
 
 void OrbitCamera::pan(float deltaX, float deltaY)
 {
+    cancelTransition();
     const float panScale = m_distance * kPanSpeed;
     m_target += (-right() * deltaX + up() * deltaY) * panScale;
 }
 
 void OrbitCamera::zoom(float delta)
 {
+    cancelTransition();
     m_distance -= delta * kZoomSpeed;
     clampState();
 }
 
 void OrbitCamera::reset()
 {
-    m_target = glm::vec3(0.0f, 0.0f, 0.0f);
+    cancelTransition();
+    m_target   = glm::vec3(0.0f, 0.0f, 0.0f);
     m_distance = 6.0f;
-    m_yaw = kYawFront;
-    m_pitch = 0.34906585f; // 20 derajat agar kedalaman objek langsung terasa
+    m_yaw      = kYawFront;
+    m_pitch    = 0.34906585f;
     clampState();
 }
 
-void OrbitCamera::applyPreset(CameraPreset preset)
+void OrbitCamera::requestPreset(CameraPreset preset)
 {
+    m_fromYaw      = m_yaw;
+    m_fromPitch    = m_pitch;
+    m_fromDistance = m_distance;
+
     switch (preset)
     {
     case CameraPreset::Front:
-        m_yaw = kYawFront;
-        m_pitch = kPitchFrontSide;
+        m_toYaw      = kYawFront;
+        m_toPitch    = kPitchFrontSide;
+        m_toDistance = m_distance;
         break;
+
     case CameraPreset::Side:
-        m_yaw = kYawSide;
-        m_pitch = kPitchFrontSide;
+        m_toYaw      = kYawSide;
+        m_toPitch    = kPitchFrontSide;
+        m_toDistance = m_distance;
         break;
+
     case CameraPreset::Top:
-        m_pitch = kPitchTop;
+        m_toYaw      = m_yaw;
+        m_toPitch    = kPitchTop;
+        m_toDistance = m_distance;
         break;
     }
-    clampState();
+
+    m_transitionTime     = 0.0f;
+    m_transitionDuration = kTransitionDuration;
+    m_transitioning      = true;
+}
+
+void OrbitCamera::cancelTransition()
+{
+    m_transitioning = false;
 }
 
 glm::mat4 OrbitCamera::viewMatrix() const
@@ -118,7 +192,7 @@ glm::vec3 OrbitCamera::position() const
 void OrbitCamera::clampState()
 {
     m_distance = std::clamp(m_distance, m_minDistance, m_maxDistance);
-    m_pitch = std::clamp(m_pitch, m_minPitch, m_maxPitch);
+    m_pitch    = std::clamp(m_pitch, m_minPitch, m_maxPitch);
 }
 
 glm::vec3 OrbitCamera::forward() const
