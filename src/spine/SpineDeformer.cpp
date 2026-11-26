@@ -1,5 +1,6 @@
 #include "SpineDeformer.h"
 #include <cmath>
+#include <algorithm>
 
 namespace Spinewise {
 
@@ -52,9 +53,151 @@ namespace Spinewise {
             v.currentPosition = v.basePosition;
             v.rotationEuler = glm::vec3(0.0f);
 
+            v.targetPosition = v.basePosition;
+            v.startPosition = v.basePosition;
+            v.startRotation = glm::vec3(0.0f);
+            v.targetRotation = glm::vec3(0.0f);
+
             float sizeY = vertebraSpacing * 0.48f;
             float sizeXZ = 0.8f - (t * 0.3f);
             v.scale = glm::vec3(sizeXZ, sizeY, sizeXZ);
+        }
+    }
+
+    void SpineDeformer::applyDeformation(const SpineParams& params, bool animate) {
+        if (params.pattern == CurvePattern::C) {
+            calculateCDeformation(params);
+        }
+        else {
+            calculateSDeformation(params);
+        }
+        for (auto& v : m_vertebrae) {
+            v.startPosition = v.currentPosition;
+            v.startRotation = v.rotationEuler;
+            v.targetPosition = v.basePosition;
+            v.targetRotation = glm::vec3(0.0f);
+        }
+
+        if (params.pattern == CurvePattern::C) {
+            calculateCDeformation(params);
+        }
+        else {
+            calculateSDeformation(params);
+        }
+
+        if (animate) {
+            for (auto& v : m_vertebrae) {
+                v.startPosition = v.basePosition;
+                v.startRotation = glm::vec3(0.0f);
+                v.currentPosition = v.basePosition;
+                v.rotationEuler = glm::vec3(0.0f);
+            }
+            m_isAnimating = true;
+            m_animTime = 0.0f;
+        }
+        else {
+            m_isAnimating = false;
+            for (auto& v : m_vertebrae) {
+                v.currentPosition = v.targetPosition;
+                v.rotationEuler = v.targetRotation;
+            }
+        }
+    }
+
+    void SpineDeformer::calculateCDeformation(const SpineParams& params) {
+        if (params.primaryCobb <= 0.001f) return;
+
+        int startIdx = 5, endIdx = 16;
+        if (params.primaryRegion == Region::Lumbar) { startIdx = 0; endIdx = 4; }
+        else if (params.primaryRegion == Region::Thoracic) { startIdx = 5; endIdx = 16; }
+        else if (params.primaryRegion == Region::Thoracolumbar) { startIdx = 2; endIdx = 11; }
+
+        float yLower = m_vertebrae[startIdx].basePosition.y;
+        float yUpper = m_vertebrae[endIdx].basePosition.y;
+        float L = std::abs(yUpper - yLower);
+        if (L <= 0.001f) return;
+
+        const float PI = 3.14159265359f;
+        float thetaRad = params.primaryCobb * (PI / 180.0f);
+        float A = (L / PI) * std::tan(thetaRad / 2.0f);
+        float s = (params.primaryDirection == Direction::Right) ? -1.0f : 1.0f;
+
+        for (int i = startIdx; i <= endIdx; ++i) {
+            Vertebra& v = m_vertebrae[i];
+            float t = std::clamp((v.basePosition.y - yLower) / L, 0.0f, 1.0f);
+
+            v.targetPosition.x = v.basePosition.x + (s * A * std::sin(PI * t));
+            float dx_dy = s * A * (PI / L) * std::cos(PI * t);
+            v.targetRotation.z = -std::atan(dx_dy);
+        }
+    }
+
+    void SpineDeformer::calculateSDeformation(const SpineParams& params) {
+        const float PI = 3.14159265359f;
+             
+        int pStart = 5, pEnd = 16;
+        int sStart = 0, sEnd = 4;
+
+        if (params.primaryRegion == Region::Lumbar) {
+            pStart = 0; pEnd = 4;
+            sStart = 5; sEnd = 16;
+        }
+
+        float s1 = (params.primaryDirection == Direction::Right) ? -1.0f : 1.0f;
+        float s2 = -s1; 
+
+        if (params.primaryCobb > 0.001f) {
+            float yLower = m_vertebrae[pStart].basePosition.y;
+            float yUpper = m_vertebrae[pEnd].basePosition.y;
+            float L1 = std::abs(yUpper - yLower);
+            if (L1 > 0.001f) {
+                float theta1 = params.primaryCobb * (PI / 180.0f);
+                float A1 = (L1 / PI) * std::tan(theta1 / 2.0f);
+
+                for (int i = pStart; i <= pEnd; ++i) {
+                    Vertebra& v = m_vertebrae[i];
+                    float t = std::clamp((v.basePosition.y - yLower) / L1, 0.0f, 1.0f);
+                    v.targetPosition.x = v.basePosition.x + (s1 * A1 * std::sin(PI * t));
+                    float dx_dy = s1 * A1 * (PI / L1) * std::cos(PI * t);
+                    v.targetRotation.z = -std::atan(dx_dy);
+                }
+            }
+        }
+
+        if (params.secondaryCobb > 0.001f) {
+            float yLower = m_vertebrae[sStart].basePosition.y;
+            float yUpper = m_vertebrae[sEnd].basePosition.y;
+            float L2 = std::abs(yUpper - yLower);
+            if (L2 > 0.001f) {
+                float theta2 = params.secondaryCobb * (PI / 180.0f);
+                float A2 = (L2 / PI) * std::tan(theta2 / 2.0f);
+
+                for (int i = sStart; i <= sEnd; ++i) {
+                    Vertebra& v = m_vertebrae[i];
+                    float t = std::clamp((v.basePosition.y - yLower) / L2, 0.0f, 1.0f);
+                    v.targetPosition.x = v.basePosition.x + (s2 * A2 * std::sin(PI * t));
+                    float dx_dy = s2 * A2 * (PI / L2) * std::cos(PI * t);
+                    v.targetRotation.z = -std::atan(dx_dy);
+                }
+            }
+        }
+    }
+
+    void SpineDeformer::update(float dt) {
+        if (!m_isAnimating) return;
+
+        m_animTime += dt;
+        float progress = std::clamp(m_animTime / m_animDuration, 0.0f, 1.0f);
+
+        const float PI = 3.14159265359f;
+        float ease = 0.5f * (1.0f - std::cos(progress * PI));
+        for (auto& v : m_vertebrae) {
+            v.currentPosition = glm::mix(v.startPosition, v.targetPosition, ease);
+            v.rotationEuler = glm::mix(v.startRotation, v.targetRotation, ease);
+        }
+
+        if (progress >= 1.0f) {
+            m_isAnimating = false;
         }
     }
 

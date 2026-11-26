@@ -76,7 +76,7 @@ void SpineLabScreen::onExit()
 void SpineLabScreen::update(float dt)
 {
     m_camera.update(dt);
-
+	m_spineDeformer.update(dt);
     const int width = m_app.framebufferWidth();
     const int height = m_app.framebufferHeight();
     if (height > 0) {
@@ -125,7 +125,7 @@ void SpineLabScreen::drawUI()
     ui::drawTopBar(m_app, name());
 
     if (ui::drawSpineParamsPanel(m_params)) {
-        // TODO (Diny)
+        m_spineDeformer.applyDeformation(m_params, false);
     }
 
 	ImGui::Begin("Camera Controls");
@@ -142,5 +142,9 @@ void SpineLabScreen::drawUI()
 		m_camera.orbitBy(1.1f, 0.35f);
 		m_camera.zoom(-15.0f);
 	}
+    ImGui::Separator();
+    if (ImGui::Button("? Putar Animasi Transisi (1.5s)")) {
+        m_spineDeformer.applyDeformation(m_params, true);
+    }
 	ImGui::End();
 }
