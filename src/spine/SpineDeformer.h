@@ -2,19 +2,19 @@
 
 #include <vector>
 #include <string>
-#include <glm/vec3.hpp> 
+
+#include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
-#include <glm/ext/matrix_transform.hpp> 
-#include "SpineParams.h"
+#include <glm/ext/matrix_transform.hpp>
+
+#include "spine/SpineParams.h"
 
 namespace Spinewise {
 
-    // Region anatomi tiap vertebra. Beda dengan Spinewise::Region (di SpineParams.h)
-    // yang merupakan region *kurva* skoliosis dan tidak punya Cervical.
     enum class VertebraRegion {
-        Cervical,
+        Lumbar,
         Thoracic,
-        Lumbar
+        Cervical
     };
 
     struct Vertebra {
@@ -22,9 +22,15 @@ namespace Spinewise {
         std::string name;
         VertebraRegion region;
 
-        glm::vec3 basePosition;
-        glm::vec3 currentPosition;
-        glm::vec3 rotationEuler;
+        glm::vec3 basePosition;      // Posisi lurus normal
+        glm::vec3 startPosition;     // Titik awal animasi
+        glm::vec3 targetPosition;    // Titik target deformasi
+        glm::vec3 currentPosition;   // Posisi aktif di layar
+
+        glm::vec3 startRotation;
+        glm::vec3 targetRotation;
+        glm::vec3 rotationEuler;     // Rotasi aktif di layar
+
         glm::vec3 scale;
 
         glm::mat4 getModelMatrix() const {
@@ -45,12 +51,21 @@ namespace Spinewise {
         void initializeReferenceCurve();
         const std::vector<Vertebra>& getVertebrae() const { return m_vertebrae; }
 
+        void applyDeformation(const SpineParams& params, bool animate = false);
+        void update(float dt);
         // TODO (Task 3): void applyCDeformation(const SpineParams& params);
         void applyCDeformation(const SpineParams& params);
         // TODO (Task 4): void applySDeformation(const SpineParams& params);
 
     private:
+        void calculateCDeformation(const SpineParams& params);
+        void calculateSDeformation(const SpineParams& params);
+
         std::vector<Vertebra> m_vertebrae;
+
+        bool m_isAnimating = false;
+        float m_animTime = 0.0f;
+        const float m_animDuration = 1.5f;
     };
 
 } // namespace Spinewise
