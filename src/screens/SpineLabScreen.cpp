@@ -125,7 +125,7 @@ void SpineLabScreen::drawUI()
     ui::drawTopBar(m_app, name());
 
     if (ui::drawSpineParamsPanel(m_params)) {
-        // TODO (Diny)
+        m_spineDeformer.applyCDeformation(m_params);
     }
 
 	ImGui::Begin("Camera Controls");

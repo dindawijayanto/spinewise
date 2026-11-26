@@ -46,6 +46,7 @@ namespace Spinewise {
         const std::vector<Vertebra>& getVertebrae() const { return m_vertebrae; }
 
         // TODO (Task 3): void applyCDeformation(const SpineParams& params);
+        void applyCDeformation(const SpineParams& params);
         // TODO (Task 4): void applySDeformation(const SpineParams& params);
 
     private:
