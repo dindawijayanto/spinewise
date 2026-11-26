@@ -1,5 +1,7 @@
 #include "SpineDeformer.h"
 #include <cmath>
+#include <cmath>
+#include <algorithm>
 
 namespace Spinewise {
 
@@ -55,6 +57,55 @@ namespace Spinewise {
             float sizeY = vertebraSpacing * 0.48f;
             float sizeXZ = 0.8f - (t * 0.3f);
             v.scale = glm::vec3(sizeXZ, sizeY, sizeXZ);
+        }
+    }
+    void SpineDeformer::applyCDeformation(const SpineParams& params)
+    {
+        for (auto& v : m_vertebrae) {
+            v.currentPosition = v.basePosition;
+            v.rotationEuler = glm::vec3(0.0f);
+        }
+        if (params.primaryCobb <= 0.001f) {
+            return;
+        }
+        int startIdx = 5;  // Default Thoracic
+        int endIdx = 16;
+
+        if (params.primaryRegion == Region::Lumbar) {
+            startIdx = 0;
+            endIdx = 4;
+        }
+        else if (params.primaryRegion == Region::Thoracic) {
+            startIdx = 5;
+            endIdx = 16;
+        }
+        else if (params.primaryRegion == Region::Thoracolumbar) {
+            startIdx = 2;
+            endIdx = 11;
+        }
+
+        float yLower = m_vertebrae[startIdx].basePosition.y;
+        float yUpper = m_vertebrae[endIdx].basePosition.y;
+        float L = std::abs(yUpper - yLower);
+        if (L <= 0.001f) return;
+
+        const float PI = 3.14159265359f;
+        float thetaRad = params.primaryCobb * (PI / 180.0f);
+        float A = (L / PI) * std::tan(thetaRad / 2.0f);
+
+        float s = (params.primaryDirection == Direction::Right) ? -1.0f : 1.0f;
+
+        for (int i = startIdx; i <= endIdx; ++i) {
+            Vertebra& v = m_vertebrae[i];
+
+            float t = (v.basePosition.y - yLower) / L;
+            t = std::clamp(t, 0.0f, 1.0f);
+
+            float offsetX = s * A * std::sin(PI * t);
+            v.currentPosition.x = v.basePosition.x + offsetX;
+
+            float dx_dy = s * A * (PI / L) * std::cos(PI * t);
+            v.rotationEuler.z = -std::atan(dx_dy);
         }
     }
 
