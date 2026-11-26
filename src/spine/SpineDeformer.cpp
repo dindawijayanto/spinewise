@@ -26,27 +26,26 @@ namespace Spinewise {
             v.id = i;
             v.name = names[i];
 
-            if (i <= 4) v.region = VertebraRegion::Lumbar;          // L5-L1
-            else if (i <= 16) v.region = VertebraRegion::Thoracic;  // T12-T1
-            else v.region = VertebraRegion::Cervical;               // C7-C1
+            if (i <= 4) v.region = VertebraRegion::Lumbar;
+            else if (i <= 16) v.region = VertebraRegion::Thoracic;
+            else v.region = VertebraRegion::Cervical;
 
             float y = startY + (i * vertebraSpacing);
             float x = 0.0f;
             float t = static_cast<float>(i) / 23.0f;
 
-            // Kurva alami bidang sagital (Lordosis & Kifosis)
             float z = 0.0f;
             if (t <= 0.25f) {
                 float localT = t / 0.25f;
-                z = -0.5f * std::sin(localT * 3.14159f);       // Lumbar Lordosis
+                z = -0.5f * std::sin(localT * 3.14159f);
             }
             else if (t <= 0.80f) {
                 float localT = (t - 0.25f) / 0.55f;
-                z = 0.8f * std::sin(localT * 3.14159f);        // Thoracic Kyphosis
+                z = 0.8f * std::sin(localT * 3.14159f);
             }
             else {
                 float localT = (t - 0.80f) / 0.20f;
-                z = -0.3f * std::sin(localT * 3.14159f);       // Cervical Lordosis
+                z = -0.3f * std::sin(localT * 3.14159f);
             }
 
             v.basePosition = glm::vec3(x, y, z);
@@ -65,19 +64,6 @@ namespace Spinewise {
     }
 
     void SpineDeformer::applyDeformation(const SpineParams& params, bool animate) {
-        if (params.pattern == CurvePattern::C) {
-            calculateCDeformation(params);
-        }
-        else {
-            calculateSDeformation(params);
-        }
-        for (auto& v : m_vertebrae) {
-            v.startPosition = v.currentPosition;
-            v.startRotation = v.rotationEuler;
-            v.targetPosition = v.basePosition;
-            v.targetRotation = glm::vec3(0.0f);
-        }
-
         if (params.pattern == CurvePattern::C) {
             calculateCDeformation(params);
         }
@@ -134,7 +120,7 @@ namespace Spinewise {
 
     void SpineDeformer::calculateSDeformation(const SpineParams& params) {
         const float PI = 3.14159265359f;
-             
+
         int pStart = 5, pEnd = 16;
         int sStart = 0, sEnd = 4;
 
@@ -144,7 +130,7 @@ namespace Spinewise {
         }
 
         float s1 = (params.primaryDirection == Direction::Right) ? -1.0f : 1.0f;
-        float s2 = -s1; 
+        float s2 = -s1;
 
         if (params.primaryCobb > 0.001f) {
             float yLower = m_vertebrae[pStart].basePosition.y;
@@ -164,15 +150,18 @@ namespace Spinewise {
             }
         }
 
-        if (params.secondaryCobb > 0.001f) {
-            float yLower = m_vertebrae[sStart].basePosition.y;
-            float yUpper = m_vertebrae[sEnd].basePosition.y;
+        if (params.pattern == CurvePattern::S && params.secondaryCobb > 0.001f) {
+            int sStart_idx = 0, sEnd_idx = 4;
+            if (params.primaryRegion == Region::Lumbar) { sStart_idx = 5; sEnd_idx = 16; }
+
+            float yLower = m_vertebrae[sStart_idx].basePosition.y;
+            float yUpper = m_vertebrae[sEnd_idx].basePosition.y;
             float L2 = std::abs(yUpper - yLower);
             if (L2 > 0.001f) {
                 float theta2 = params.secondaryCobb * (PI / 180.0f);
                 float A2 = (L2 / PI) * std::tan(theta2 / 2.0f);
 
-                for (int i = sStart; i <= sEnd; ++i) {
+                for (int i = sStart_idx; i <= sEnd_idx; ++i) {
                     Vertebra& v = m_vertebrae[i];
                     float t = std::clamp((v.basePosition.y - yLower) / L2, 0.0f, 1.0f);
                     v.targetPosition.x = v.basePosition.x + (s2 * A2 * std::sin(PI * t));
@@ -191,6 +180,7 @@ namespace Spinewise {
 
         const float PI = 3.14159265359f;
         float ease = 0.5f * (1.0f - std::cos(progress * PI));
+
         for (auto& v : m_vertebrae) {
             v.currentPosition = glm::mix(v.startPosition, v.targetPosition, ease);
             v.rotationEuler = glm::mix(v.startRotation, v.targetRotation, ease);

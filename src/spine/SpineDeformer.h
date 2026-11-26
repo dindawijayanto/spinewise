@@ -53,6 +53,9 @@ namespace Spinewise {
 
         void applyDeformation(const SpineParams& params, bool animate = false);
         void update(float dt);
+        // TODO (Task 3): void applyCDeformation(const SpineParams& params);
+        void applyCDeformation(const SpineParams& params);
+        // TODO (Task 4): void applySDeformation(const SpineParams& params);
 
     private:
         void calculateCDeformation(const SpineParams& params);
