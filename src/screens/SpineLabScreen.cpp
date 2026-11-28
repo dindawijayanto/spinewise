@@ -48,7 +48,6 @@ void SpineLabScreen::initCubeMesh()
     glBindVertexArray(0);
 }
 
-
 void SpineLabScreen::onEnter(){
     initCubeMesh();
     try
@@ -72,15 +71,18 @@ void SpineLabScreen::onExit()
     if (m_cubeVAO) { glDeleteVertexArrays(1, &m_cubeVAO); m_cubeVAO = 0; }
     if (m_cubeVBO) { glDeleteBuffers(1,     &m_cubeVBO);  m_cubeVBO = 0; }
 }
+
 void SpineLabScreen::update(float dt)
 {
     m_camera.update(dt);
     m_spineDeformer.update(dt);
 
+    m_highlightState = Spinewise::SpineHighlightEvaluator::evaluate(
+        m_params, m_spineDeformer.getVertebrae(), m_highlightParams);
+
     const int w = m_app.framebufferWidth();
     const int h = m_app.framebufferHeight();
 
-    // In side-by-side mode each viewport is half the width; use full width otherwise.
     const float viewW = (m_comparisonMode == ComparisonMode::SideBySide)
                         ? static_cast<float>(w) * 0.5f
                         : static_cast<float>(w);
@@ -91,7 +93,6 @@ void SpineLabScreen::update(float dt)
 
     m_cameraInput.update(m_app.window(), m_camera);
 }
-
 
 void SpineLabScreen::renderVertebra(const Spinewise::Vertebra& v, bool useBase,
                                     const glm::mat4& view, const glm::mat4& proj,
@@ -110,14 +111,60 @@ void SpineLabScreen::renderVertebra(const Spinewise::Vertebra& v, bool useBase,
     m_shader->setMat4("uProjection", proj);
     m_shader->setFloat("uAlpha",     alpha);
 
-    if (v.id <= 4)
-        glVertexAttrib3f(1, 0.2f, 0.8f, 0.9f);   // Lumbar: cyan
-    else if (v.id <= 16)
-        glVertexAttrib3f(1, 0.9f, 0.9f, 0.95f);  // Thoracic: bone white
-    else
-        glVertexAttrib3f(1, 1.0f, 0.7f, 0.4f);   // Cervical: amber
+    // Apply Vertebra Highlight evaluation
+    const auto& vInfo = (v.id >= 0 && v.id < static_cast<int>(m_highlightState.vertebraHighlights.size()))
+                        ? m_highlightState.vertebraHighlights[v.id]
+                        : Spinewise::VertebraHighlightInfo{};
+
+    glVertexAttrib3f(1, vInfo.color.r, vInfo.color.g, vInfo.color.b);
+
+    // Convex / Concave side tinting on vertebra
+    const bool enableSide = m_highlightParams.enableSideVisualization && vInfo.isAffected;
+    m_shader->setInt("uEnableSideViz", enableSide ? 1 : 0);
+
+    const float convexDir = (m_highlightState.primaryConvexDirection == Spinewise::Direction::Right) ? -1.0f : 1.0f;
+    m_shader->setFloat("uConvexDir", convexDir);
+    m_shader->setVec3("uConvexColor", m_highlightParams.convexColor);
+    m_shader->setVec3("uConcaveColor", m_highlightParams.concaveColor);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void SpineLabScreen::renderSideIndicators(const glm::mat4& view, const glm::mat4& proj)
+{
+    if (!m_highlightParams.enableSideVisualization) return;
+
+    // Render 3D guide indicators on Left and Right of affected curve
+    const float convexX = (m_highlightState.primaryConvexDirection == Spinewise::Direction::Right) ? -2.8f : 2.8f;
+    const float concaveX = -convexX;
+
+    m_shader->setInt("uEnableSideViz", 0);
+
+    // Convex Side Guide Indicator
+    {
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(convexX, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.25f, 6.0f, 0.25f));
+        m_shader->setMat4("uModel", model);
+        m_shader->setMat4("uView", view);
+        m_shader->setMat4("uProjection", proj);
+        m_shader->setFloat("uAlpha", 0.75f);
+        glVertexAttrib3f(1, m_highlightParams.convexColor.r, m_highlightParams.convexColor.g, m_highlightParams.convexColor.b);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // Concave Side Guide Indicator
+    {
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, glm::vec3(concaveX, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.25f, 6.0f, 0.25f));
+        m_shader->setMat4("uModel", model);
+        m_shader->setMat4("uView", view);
+        m_shader->setMat4("uProjection", proj);
+        m_shader->setFloat("uAlpha", 0.75f);
+        glVertexAttrib3f(1, m_highlightParams.concaveColor.r, m_highlightParams.concaveColor.g, m_highlightParams.concaveColor.b);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 }
 
 void SpineLabScreen::renderReference(const glm::mat4& view, const glm::mat4& proj, float alpha)
@@ -143,6 +190,7 @@ void SpineLabScreen::renderSingle(int fbW, int fbH)
 
     glBindVertexArray(m_cubeVAO);
     renderDeformed(view, proj, 1.0f);
+    renderSideIndicators(view, proj);
     glBindVertexArray(0);
 }
 
@@ -168,6 +216,7 @@ void SpineLabScreen::renderSideBySide(int fbW, int fbH)
     glScissor(halfW, 0, fbW - halfW, fbH);
     glClear(GL_DEPTH_BUFFER_BIT);
     renderDeformed(view, proj, 1.0f);
+    renderSideIndicators(view, proj);
 
     glDisable(GL_SCISSOR_TEST);
     glBindVertexArray(0);
@@ -192,6 +241,7 @@ void SpineLabScreen::renderOverlay(int fbW, int fbH)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE); 
     renderDeformed(view, proj, m_overlayAlpha);
+    renderSideIndicators(view, proj);
 
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
@@ -232,7 +282,7 @@ void SpineLabScreen::drawUI()
 {
     ui::drawTopBar(m_app, name());
 
-    if (ui::drawSpineParamsPanel(m_params))
+    if (ui::drawSpineParamsPanel(m_params, m_highlightParams, m_highlightState))
     {
         m_spineDeformer.applyDeformation(m_params, false);
     }
@@ -253,7 +303,7 @@ void SpineLabScreen::drawUI()
     }
 
     ImGui::Separator();
-    if (ImGui::Button("? Putar Animasi Transisi (1.5s)"))
+    if (ImGui::Button("Putar Animasi Transisi (1.5s)"))
         m_spineDeformer.applyDeformation(m_params, true);
 
     ImGui::Separator();

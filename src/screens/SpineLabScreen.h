@@ -2,6 +2,7 @@
 
 #include "core/Screen.h"
 #include "spine/SpineDeformer.h"
+#include "spine/VertebraHighlight.h"
 #include "render/Shader.h"
 #include "camera/Camera.h"
 #include "camera/CameraInput.h"
@@ -33,6 +34,7 @@ private:
     void renderDeformed(const glm::mat4& view, const glm::mat4& proj, float alpha = 1.0f);
     void renderVertebra(const Spinewise::Vertebra& v, bool useBase,
                         const glm::mat4& view, const glm::mat4& proj, float alpha);
+    void renderSideIndicators(const glm::mat4& view, const glm::mat4& proj);
 
     void renderSideBySide(int fbW, int fbH);
     void renderOverlay(int fbW, int fbH);
@@ -40,6 +42,8 @@ private:
 
     Spinewise::SpineDeformer m_spineDeformer;
     Spinewise::SpineParams m_params;
+    Spinewise::HighlightParams m_highlightParams;
+    Spinewise::SpineHighlightState m_highlightState;
 
     std::unique_ptr<Shader> m_shader;
     OrbitCamera m_camera;

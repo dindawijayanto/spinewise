@@ -12,6 +12,8 @@ constexpr float kScoliosisThreshold = 10.0f;
 
 const ImVec4 kWarningColor(1.0f, 0.75f, 0.30f, 1.0f);
 const ImVec4 kInfoColor(0.55f, 0.80f, 1.0f, 1.0f);
+const ImVec4 kApexColorUI(0.95f, 0.30f, 0.30f, 1.0f);
+const ImVec4 kAffectedColorUI(1.0f, 0.70f, 0.20f, 1.0f);
 
 const char* regionLabel(Region region)
 {
@@ -29,7 +31,6 @@ const char* directionLabel(Direction direction)
     return direction == Direction::Left ? "Kiri" : "Kanan";
 }
 
-// Kategori umum berdasarkan besar Cobb angle (hanya untuk konteks edukasi).
 const char* severityLabel(float cobb)
 {
     if (cobb < kScoliosisThreshold) return "Di bawah ambang skoliosis";
@@ -62,19 +63,21 @@ bool cobbSlider(const char* label, float& cobb)
 
 namespace ui
 {
-bool drawSpineParamsPanel(SpineParams& params)
+bool drawSpineParamsPanel(SpineParams& params,
+                          HighlightParams& highlightParams,
+                          const SpineHighlightState& highlightState)
 {
     bool changed = false;
 
     const ImGuiIO& io = ImGui::GetIO();
-    const float panelWidth = 320.0f;
+    const float panelWidth = 340.0f;
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - panelWidth - 10.0f, 10.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(panelWidth, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.85f);
     const ImGuiWindowFlags flags =
         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 
-    if (!ImGui::Begin("Parameter Kurva", nullptr, flags))
+    if (!ImGui::Begin("Parameter Kurva & Highlight", nullptr, flags))
     {
         ImGui::End();
         return false;
@@ -117,6 +120,58 @@ bool drawSpineParamsPanel(SpineParams& params)
         changed |= cobbSlider("##secondaryCobb", params.secondaryCobb);
     }
 
+    // Highlighting & Visualisation Section
+    ImGui::SeparatorText("Vertebra Highlight System");
+    ImGui::Checkbox("Highlight Vertebra Terdampak", &highlightParams.enableVertebraHighlight);
+    ImGui::Checkbox("Highlight Vertebra Apex", &highlightParams.enableApexHighlight);
+    ImGui::Checkbox("Visualisasi Sisi Konveks & Konkaf", &highlightParams.enableSideVisualization);
+
+    if (ImGui::TreeNode("Kustomisasi Warna Highlight"))
+    {
+        ImGui::ColorEdit3("Warna Apex", &highlightParams.apexColor.x);
+        ImGui::ColorEdit3("Warna Terdampak", &highlightParams.affectedColor.x);
+        ImGui::ColorEdit3("Sisi Konveks", &highlightParams.convexColor.x);
+        ImGui::ColorEdit3("Sisi Konkaf", &highlightParams.concaveColor.x);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Testing / Data Placeholder"))
+    {
+        ImGui::Checkbox("Gunakan Data Placeholder", &highlightParams.usePlaceholderData);
+        if (highlightParams.usePlaceholderData)
+        {
+            ImGui::SliderInt("Apex ID Test (0..23)", &highlightParams.placeholderApexId, 0, 23);
+            ImGui::TextDisabled("Apex Vertebra Test: ID %d", highlightParams.placeholderApexId);
+        }
+        ImGui::TreePop();
+    }
+
+    // Informasi Ringkasan Highlight
+    ImGui::Spacing();
+    ImGui::TextDisabled("Status Highlight:");
+    if (!highlightState.primaryApexName.empty())
+    {
+        ImGui::TextColored(kApexColorUI, "Vertebra Apex: %s", highlightState.primaryApexName.c_str());
+        if (!highlightState.secondaryApexName.empty())
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(kApexColorUI, "| Sekunder: %s", highlightState.secondaryApexName.c_str());
+        }
+    }
+    else
+    {
+        ImGui::TextDisabled("Vertebra Apex: Tidak ada");
+    }
+
+    if (!highlightState.affectedRangeText.empty())
+    {
+        ImGui::TextColored(kAffectedColorUI, "Ruas Terdampak: %s", highlightState.affectedRangeText.c_str());
+    }
+
+    ImGui::Text("Sisi Konveks: %s | Sisi Konkaf: %s",
+                directionLabel(highlightState.primaryConvexDirection),
+                directionLabel(highlightState.primaryConcaveDirection));
+
     ImGui::PopItemWidth();
 
     // Validasi
@@ -145,6 +200,7 @@ bool drawSpineParamsPanel(SpineParams& params)
     if (ImGui::Button("Reset ke Normal", ImVec2(-1.0f, 0.0f)))
     {
         params = SpineParams{};
+        highlightParams = HighlightParams{};
         changed = true;
     }
 

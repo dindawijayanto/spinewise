@@ -1,12 +1,13 @@
 #pragma once
 
 #include "spine/SpineParams.h"
+#include "spine/VertebraHighlight.h"
 
-// Owner: Dinda
-// Panel input parameter skoliosis (ImGui) untuk Spine Lab.
 namespace ui
 {
-// Menggambar panel input + validasi + disclaimer, menulis langsung ke params.
-// Return true kalau ada nilai yang berubah di frame ini (dipakai untuk memicu deformasi ulang).
-bool drawSpineParamsPanel(Spinewise::SpineParams& params);
+// Menggambar panel input parameter skoliosis + kontrol highlight.
+// Return true kalau ada nilai yang berubah di frame ini.
+bool drawSpineParamsPanel(Spinewise::SpineParams& params,
+                          Spinewise::HighlightParams& highlightParams,
+                          const Spinewise::SpineHighlightState& highlightState);
 } // namespace ui
