@@ -2,13 +2,18 @@
 
 #include "core/Screen.h"
 #include "spine/SpineDeformer.h"
-#include "render/Shader.h"   
+#include "render/Shader.h"
 #include "camera/Camera.h"
 #include "camera/CameraInput.h"
 #include <memory>
 
-// Owner: Diny (Spine) + Dealova (Camera/Render)
-// Panel input SpineParams, spine prosedural, deformasi C/S, mode comparison.
+enum class ComparisonMode
+{
+    None,      
+    SideBySide, 
+    Overlay,   
+};
+
 class SpineLabScreen : public Screen
 {
 public:
@@ -20,17 +25,29 @@ public:
     void update(float dt) override;
     void render() override;
     void drawUI() override;
+
 private:
-    void initCubeMesh(); // Helper untuk membuat mesh 1 kubus
-    // Spine (Diny)
+    void initCubeMesh();
+
+    void renderReference(const glm::mat4& view, const glm::mat4& proj, float alpha = 1.0f);
+    void renderDeformed(const glm::mat4& view, const glm::mat4& proj, float alpha = 1.0f);
+    void renderVertebra(const Spinewise::Vertebra& v, bool useBase,
+                        const glm::mat4& view, const glm::mat4& proj, float alpha);
+
+    void renderSideBySide(int fbW, int fbH);
+    void renderOverlay(int fbW, int fbH);
+    void renderSingle(int fbW, int fbH);
+
     Spinewise::SpineDeformer m_spineDeformer;
-    // Input parameter dari panel (Dinda)
     Spinewise::SpineParams m_params;
-    // Render & Kamera (Dealova)
+
     std::unique_ptr<Shader> m_shader;
     OrbitCamera m_camera;
     OrbitCameraInput m_cameraInput;
-    // Buffer OpenGL untuk kubus
+
     unsigned int m_cubeVAO = 0;
     unsigned int m_cubeVBO = 0;
+
+    ComparisonMode m_comparisonMode = ComparisonMode::None;
+    float m_overlayAlpha = 0.45f;
 };
