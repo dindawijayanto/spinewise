@@ -19,20 +19,17 @@ void main()
     vec3 viewDir = normalize(uViewPos - vFragPos);
     vec3 halfDir = normalize(lightDir + viewDir);
 
-    // Warna dasar tulang
-    vec3 baseColor = vec3(0.84, 0.81, 0.75);
+    // Warna dasar per regio tulang belakang
+    vec3 baseColor;
+    if (vRegionId == 1)
+        baseColor = vec3(0.18, 0.80, 0.92); // Cervical: cyan
+    else if (vRegionId == 2)
+        baseColor = vec3(0.22, 0.84, 0.58); // Thoracic: green
+    else if (vRegionId == 3)
+        baseColor = vec3(0.95, 0.74, 0.22); // Lumbar: amber
+    else
+        baseColor = vec3(0.84, 0.81, 0.75); // Default: bone white
 
-    if (v.region == Spinewise::VertebraRegion::Cervical) {
-    glVertexAttrib3f(1, 0.18f, 0.80f, 0.92f);
-    }
-    else if (v.region == Spinewise::VertebraRegion::Thoracic) {
-        glVertexAttrib3f(1, 0.22f, 0.84f, 0.58f);
-    }
-    else if (v.region == Spinewise::VertebraRegion::Lumbar) {
-        glVertexAttrib3f(1, 0.95f, 0.74f, 0.22f);
-    }
-
-    // Highlight tipis saat hover saja; saat diklik/selected warna regio tetap asli
     if (vRegionId != 0 && vRegionId == uHoveredRegion && uHoveredRegion != uSelectedRegion)
     {
         baseColor = mix(baseColor, vec3(1.0, 1.0, 1.0), 0.20);
